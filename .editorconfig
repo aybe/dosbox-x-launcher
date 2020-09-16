@@ -1,0 +1,7 @@
+
+[*]
+
+# ReSharper properties
+resharper_csharp_max_line_length=155
+resharper_int_align_invocations=true
+resharper_int_align_variables=true
