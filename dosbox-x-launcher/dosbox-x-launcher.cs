@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
 // ReSharper disable CheckNamespace
@@ -38,7 +37,7 @@ internal static class Program
                 keytree.DeleteSubKeyTree($@"{AppDomain.CurrentDomain.FriendlyName}");
             SetupKeyDefaultValue($@"{HKCR}\Software\Classes\.com",      "comfile");
             SetupKeyDefaultValue($@"{HKCR}\Software\Classes\.exe",      "exefile");
-            MessageBox.Show("DOSBox-X Launcher uninstalled.", "Message");
+            MessageBox.Show("DOSBox-X Launcher uninstalled.", "Information");
             return;
         }
 
@@ -60,7 +59,7 @@ internal static class Program
         SetupKeyDefaultValue($@"{HKCR}\Software\Classes\.exe",      launcherKey);
 
         if (args.Length <= 0) {
-            MessageBox.Show("DOSBox-X Launcher installed.", "Message");
+            MessageBox.Show("DOSBox-X Launcher installed.", "Information");
             return;
         }
 
