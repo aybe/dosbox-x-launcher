@@ -20,17 +20,13 @@ internal static class Program
 
     private static void SetupKeyDefaultValue(string keyName, string valueData, string valueName = null)
     {
-        if (string.IsNullOrWhiteSpace(keyName))
-            throw new ArgumentException("Key cannot be null or whitespace.", nameof(keyName));
-
-        if (string.IsNullOrWhiteSpace(valueData))
-            throw new ArgumentException("Data cannot be null or whitespace.", nameof(valueData));
-
+        if (keyName == null)
+            throw new ArgumentException("Key cannot be null.", nameof(keyName));
+        if (valueData == null)
+            throw new ArgumentException("Data cannot be null.", nameof(valueData));
         var value = Registry.GetValue(keyName, valueName, null);
         if (value as string != valueData)
-        {
             Registry.SetValue(keyName, valueName, valueData);
-        }
     }
 
     private static void Main(string[] args)
@@ -49,12 +45,17 @@ internal static class Program
         var launcher    = $@"{HKCR}\Software\Classes\Applications\{AppDomain.CurrentDomain.FriendlyName}";
         var launcherKey = launcher.Substring(launcher.IndexOf("Applications", StringComparison.OrdinalIgnoreCase));
         var key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\DOSBox-X");
-        if (key == null || !(key.GetValue("Location") is string dosbox) || !File.Exists(dosbox)) {
-            dosbox      = GetDosBoxXPath();
-            SetupKeyDefaultValue($@"{HKCR}\Software\DOSBox-X", dosbox, "Location");
+        string dosbox = "";
+        if (key != null && key.GetValue("Location") is string) dosbox = key.GetValue("Location").ToString();
+        if (key == null || !(key.GetValue("Location") is string) || !File.Exists(dosbox)) {
+            dosbox = GetDosBoxXPath();
+            if (dosbox != null) SetupKeyDefaultValue($@"{HKCR}\Software\DOSBox-X", dosbox, "Location");
         }
         SetupKeyDefaultValue($@"{launcher}\DefaultIcon",            @"""%1""");
         SetupKeyDefaultValue($@"{launcher}\shell\open\command",     $@"""{Assembly.GetExecutingAssembly().Location}"" ""%1"" %2 %3 %4 %5 %6 %7 %8 %9");
+        SetupKeyDefaultValue($@"{launcher}\shell\runas",            "", "HasLUAShield");
+        SetupKeyDefaultValue($@"{launcher}\shell\runas\command",    @"""%1"" %*");
+        SetupKeyDefaultValue($@"{launcher}\shell\runas\command",    @"""%1"" %*", "IsolatedCommand");
         SetupKeyDefaultValue($@"{HKCR}\Software\Classes\.com",      launcherKey);
         SetupKeyDefaultValue($@"{HKCR}\Software\Classes\.exe",      launcherKey);
 
@@ -65,7 +66,8 @@ internal static class Program
 
         var fileName = args[0];
         var fileType = Path.GetExtension(fileName);
-        var fileArgs = string.Join(" ", args.Skip(1));
+        args[0] = "";
+        var fileArgs = string.Join(" ", args).Trim();
 
         Registry.SetValue($@"{HKCR}\Software\Classes\{fileType}", null, $"{fileType.Substring(1)}file");
 
@@ -83,28 +85,21 @@ internal static class Program
     private static string GetDosBoxXPath()
     {
         var path = Assembly.GetExecutingAssembly().Location;
-
-        path = Path.GetDirectoryName(path) ?? throw new InvalidOperationException();
+        path = Path.GetDirectoryName(path);
+        if (path == null) return null;
         path = Path.Combine(path, "dosbox-x.exe");
-
         if (File.Exists(path))
-        {
             return path;
-        }
-
         path = @"C:\DOSBox-X\dosbox-x.exe";
-
         if (File.Exists(path))
-        {
             return path;
-        }
-
         return null;
     }
 
     private static bool IsMsDosExecutable(string path)
     {
-        return NativeMethods.GetBinaryType(path, out var type) && type == SCS_DOS_BINARY;
+        uint type = 0;
+        return NativeMethods.GetBinaryType(path, out type) && type == SCS_DOS_BINARY;
     }
 }
 
